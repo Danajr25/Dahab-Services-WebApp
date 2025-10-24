@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Receipt - Dahab Services</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            line-height: 1.6;
+            color: #374151;
+            background: linear-gradient(135deg, #FBF8F3 0%, #F3E8D3 100%);
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #8B7355 0%, #A0886F 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .company-name {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        
+        .tagline {
+            font-size: 18px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+        
+        .success-banner {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .success-icon {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            margin-bottom: 16px;
+            font-size: 30px;
+            font-weight: bold;
+            line-height: 58px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        
+        .success-title {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .success-desc {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .section {
+            margin-bottom: 32px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #8B7355;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #E5D5C8;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #E5D5C8;
+            margin-right: 12px;
+            border-radius: 2px;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #FEFDFB 0%, #F8F4ED 100%);
+            border: 1px solid #E5D5C8;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .info-table tr {
+            border-bottom: 1px solid rgba(139, 115, 85, 0.1);
+        }
+        
+        .info-table tr:last-child {
+            border-bottom: none;
+        }
+        
+        .info-table td {
+            padding: 12px 0;
+            vertical-align: top;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #8B7355;
+            width: 140px;
+            min-width: 140px;
+        }
+        
+        .info-value {
+            color: #374151;
+            word-break: break-word;
+        }
+        
+        .payment-summary {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 2px solid #8B7355;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .payment-table tr {
+            border-bottom: 1px solid rgba(139, 115, 85, 0.15);
+        }
+        
+        .payment-table tr:last-child {
+            border-bottom: none;
+        }
+        
+        .payment-table td {
+            padding: 10px 0;
+        }
+        
+        .payment-label {
+            color: #374151;
+        }
+        
+        .payment-amount {
+            text-align: right;
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .payment-subtotal {
+            border-top: 2px solid #8B7355 !important;
+            font-weight: 600;
+            color: #8B7355;
+        }
+        
+        .payment-total {
+            border-top: 3px solid #8B7355 !important;
+            font-weight: 700;
+            font-size: 18px;
+            color: #8B7355;
+        }
+        
+        .payment-total td {
+            padding: 16px 0 8px 0;
+        }
+        
+        .thank-you {
+            background: linear-gradient(135deg, #8B7355 0%, #A0886F 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            margin: 32px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .thank-you::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%) translateY(-100%); }
+            50% { transform: translateX(0%) translateY(0%); }
+        }
+        
+        .thank-you-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .thank-you h3 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .thank-you p {
+            font-size: 16px;
+            opacity: 0.95;
+        }
+        
+        .next-steps {
+            background: linear-gradient(135deg, #E6F3FF 0%, #D1E7DD 100%);
+            border: 1px solid #B6E5D8;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .next-steps h4 {
+            color: #1e40af;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .next-steps h4::before {
+            content: '📋';
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        
+        .next-steps ul {
+            color: #1e3a8a;
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .next-steps li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .contact-info {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .contact-info h4 {
+            color: #8B7355;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .contact-info h4::before {
+            content: '📞';
+            margin-right: 8px;
+            font-size: 20px;
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #8B7355 0%, #A0886F 100%);
+            color: white;
+            padding: 32px;
+            text-align: center;
+        }
+        
+        .footer-brand {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .footer-note {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 16px;
+        }
+        
+        .booking-ref {
+            background: #FEFDFB;
+            border: 1px solid #E5D5C8;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .booking-ref-item {
+            text-align: center;
+        }
+        
+        .booking-ref-label {
+            font-size: 12px;
+            color: #8B7355;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .booking-ref-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #8B7355;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <h1 class="company-name">Dahab Services</h1>
+                <p class="tagline">Making London Your Home</p>
+            </div>
+        </div>
+
+        <!-- Success Banner -->
+        <div class="success-banner">
+            <div class="success-icon">✓</div>
+            <h2 class="success-title">Payment Successful!</h2>
+            <p class="success-desc">Your booking has been confirmed and payment processed successfully</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Booking Reference -->
+            <div class="booking-ref">
+                <div class="booking-ref-item">
+                    <div class="booking-ref-label">Booking Reference</div>
+                    <div class="booking-ref-value">#DH-{{customer_name}}-{{service_date}}</div>
+                </div>
+                <div class="booking-ref-item">
+                    <div class="booking-ref-label">Booking Date</div>
+                    <div class="booking-ref-value">{{service_date}}</div>
+                </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="section">
+                <h3 class="section-title">Customer Information</h3>
+                <div class="info-box">
+                    <table class="info-table">
+                        <tr>
+                            <td class="info-label">Full Name:</td>
+                            <td class="info-value">{{customer_name}} {{customer_surname}}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Email Address:</td>
+                            <td class="info-value">{{customer_email}}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">WhatsApp:</td>
+                            <td class="info-value">{{customer_whatsapp}}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Service Address:</td>
+                            <td class="info-value">{{service_address}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Service Details -->
+            <div class="section">
+                <h3 class="section-title">Service Details</h3>
+                <div class="info-box">
+                    <table class="info-table">
+                        <tr>
+                            <td class="info-label">Service Type:</td>
+                            <td class="info-value">{{service_name}}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Service Date:</td>
+                            <td class="info-value">{{service_date}}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Time Slots:</td>
+                            <td class="info-value">{{selected_hours}}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Total Hours:</td>
+                            <td class="info-value">{{total_hours}} hours</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="section">
+                <h3 class="section-title">Payment Summary</h3>
+                <div class="payment-summary">
+                    <table class="payment-table">
+                        <tr>
+                            <td class="payment-label">Service Cost ({{total_hours}} hours):</td>
+                            <td class="payment-amount">£{{service_total}}</td>
+                        </tr>
+                        <tr>
+                            <td class="payment-label">Booking Fee {{booking_fee_type}}:</td>
+                            <td class="payment-amount">£{{booking_fee}}</td>
+                        </tr>
+                        <tr class="payment-subtotal">
+                            <td class="payment-label">Subtotal:</td>
+                            <td class="payment-amount">£{{subtotal}}</td>
+                        </tr>
+                        <tr>
+                            <td class="payment-label">VAT (20%):</td>
+                            <td class="payment-amount">£{{vat_amount}}</td>
+                        </tr>
+                        <tr class="payment-total">
+                            <td class="payment-label"><strong>Total Paid:</strong></td>
+                            <td class="payment-amount"><strong>£{{total_amount}}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h4>What Happens Next?</h4>
+                <ul>
+                    <li><strong>Worker Assignment:</strong> Our team will assign a qualified worker to your booking within 24 hours</li>
+                    <li><strong>WhatsApp Confirmation:</strong> You'll receive worker details and contact information via WhatsApp</li>
+                    <li><strong>Service Day:</strong> Your assigned worker will arrive at your address at the scheduled time</li>
+                    <li><strong>Support:</strong> Contact us anytime if you have questions or need to make changes</li>
+                </ul>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="contact-info">
+                <h4>Need Assistance?</h4>
+                <table class="info-table">
+                    <tr>
+                        <td class="info-label">Email:</td>
+                        <td class="info-value">mylondon@dahabservice.com</td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">WhatsApp:</td>
+                        <td class="info-value">Send us a message for immediate support</td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">Management:</td>
+                        <td class="info-value">Connecteam Platform (for booking updates)</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Thank You Section -->
+            <div class="thank-you">
+                <div class="thank-you-content">
+                    <h3>Thank You for Choosing Dahab Services!</h3>
+                    <p>We're honored to help make London your home. Your trust in our services means everything to us.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-brand">Dahab Services</div>
+            <p>Making London Your Home</p>
+            <p class="footer-note">This is an automated receipt. Please keep it for your records.</p>
+        </div>
+    </div>
+</body>
+</html>

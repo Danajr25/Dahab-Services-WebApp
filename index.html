@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dahab Services - Book Your Service</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        .hour-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+        }
+        
+        .hour-button {
+            transition: all 0.2s ease;
+        }
+        
+        .hour-button:hover {
+            transform: translateY(-1px);
+        }
+        
+        .selected-hour {
+            background: linear-gradient(135deg, #8b4513, #a0522d);
+            color: white;
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3);
+        }
+        
+        .night-hour {
+            background: linear-gradient(135deg, #654321, #8b4513);
+        }
+        
+        .form-container {
+            background: linear-gradient(135deg, #f5f5dc 0%, #ddbea9 100%);
+            min-height: 100vh;
+        }
+        
+        .card {
+            background: #faf8f5;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(139, 69, 19, 0.15), 0 10px 10px -5px rgba(139, 69, 19, 0.08);
+            border: 1px solid #e6ddd4;
+        }
+        
+        .input-field {
+            transition: all 0.2s ease;
+            border: 2px solid #d2b48c;
+            background: #fefdfb;
+        }
+        
+        .input-field:focus {
+            border-color: #8b4513;
+            box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+        }
+        
+        .submit-button {
+            background: linear-gradient(135deg, #8b4513, #a0522d);
+            transition: all 0.3s ease;
+        }
+        
+        .submit-button:hover {
+            background: linear-gradient(135deg, #a0522d, #cd853f);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(139, 69, 19, 0.3);
+        }
+        
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .language-toggle {
+            background: linear-gradient(135deg, #8b4513, #a0522d);
+        }
+        
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        
+        .success-animation {
+            animation: successPulse 0.6s ease-out;
+        }
+        
+        @keyframes successPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .error-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #8b4513;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="form-container">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 id="mainTitle" class="text-4xl font-bold text-amber-900 mb-2">Dahab Services</h1>
+            <p id="tagline" class="text-amber-800 text-lg">Making London Your Home</p>
+        </div>
+
+        <!-- Language Toggle -->
+        <div class="flex justify-end mb-6">
+            <button id="languageToggle" class="language-toggle text-white px-4 py-2 rounded-lg font-medium hover:opacity-90 transition-opacity">
+                العربية
+            </button>
+        </div>
+
+        <!-- Main Form Card -->
+        <div class="card p-8">
+            <div class="text-center mb-8">
+                <h2 id="formTitle" class="text-3xl font-bold text-amber-900 mb-2">Book Your Service</h2>
+                <p id="formSubtitle" class="text-amber-800">Fill out the form below to schedule your appointment</p>
+            </div>
+
+            <form id="bookingForm" class="space-y-6">
+                <!-- Personal Information -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label id="nameLabel" class="block text-sm font-medium text-amber-900 mb-2">Name *</label>
+                        <input type="text" id="name" name="name" class="input-field w-full px-4 py-3 rounded-lg outline-none" required>
+                        <div id="nameError" class="text-red-500 text-sm mt-1 hidden"></div>
+                    </div>
+                    <div>
+                        <label id="surnameLabel" class="block text-sm font-medium text-amber-900 mb-2">Surname *</label>
+                        <input type="text" id="surname" name="surname" class="input-field w-full px-4 py-3 rounded-lg outline-none" required>
+                        <div id="surnameError" class="text-red-500 text-sm mt-1 hidden"></div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label id="emailLabel" class="block text-sm font-medium text-amber-900 mb-2">Email *</label>
+                        <input type="email" id="email" name="email" class="input-field w-full px-4 py-3 rounded-lg outline-none" required>
+                        <div id="emailError" class="text-red-500 text-sm mt-1 hidden"></div>
+                    </div>
+                    <div>
+                        <label id="whatsappLabel" class="block text-sm font-medium text-amber-900 mb-2">WhatsApp Number *</label>
+                        <input type="tel" id="whatsapp" name="whatsapp" class="input-field w-full px-4 py-3 rounded-lg outline-none" required>
+                        <div id="whatsappError" class="text-red-500 text-sm mt-1 hidden"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <label id="addressLabel" class="block text-sm font-medium text-amber-900 mb-2">Address *</label>
+                    <input type="text" id="address" name="address" class="input-field w-full px-4 py-3 rounded-lg outline-none" required>
+                    <div id="addressError" class="text-red-500 text-sm mt-1 hidden"></div>
+                </div>
+
+                <!-- ID Upload -->
+                <div>
+                    <label id="idUploadLabel" class="block text-sm font-medium text-amber-900 mb-2">Upload ID Document *</label>
+                    <div class="relative">
+                        <input type="file" id="idUpload" name="idUpload" accept=".jpg,.jpeg,.png,.pdf" class="input-field w-full px-4 py-3 rounded-lg outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100" required>
+                        <div id="idUploadHint" class="mt-1 text-xs text-amber-600">Accepted formats: JPG, PNG, PDF (Max 5MB)</div>
+                    </div>
+                    <div id="idUploadError" class="text-red-500 text-sm mt-1 hidden"></div>
+                    <div id="idUploadSuccess" class="text-green-600 text-sm mt-1 hidden">✓ ID document uploaded successfully</div>
+                </div>
+
+                <!-- Service Selection -->
+                <div>
+                    <label id="serviceLabel" class="block text-sm font-medium text-amber-900 mb-2">Select Service *</label>
+                    <select id="service" name="service" class="input-field w-full px-4 py-3 rounded-lg outline-none" required>
+                        <option value="" id="selectServiceOption">Select a service</option>
+                        <option value="personal-care" data-rate="30">Personal Care £30/hr</option>
+                        <option value="light-cleaning" data-rate="25">Light Cleaning £25/hr</option>
+                        <option value="babysitting" data-rate="40">Babysitting/Child Care £40/hr</option>
+                        <option value="hospital-companion" data-rate="35">Hospital & Appointment Companion £35/hr</option>
+                        <option value="deep-cleaning" data-rate="50">Deep Cleaning £50/hr (2 workers)</option>
+                        <option value="shopping-assistant" data-rate="25">Shopping Assistant £25/hr</option>
+                        <option value="shopping-behalf" data-rate="30">Shopping on Your Behalf £30/hr</option>
+                        <option value="elderly-care" data-rate="40">Elderly Care £40/hr</option>
+                    </select>
+                    <div id="serviceError" class="text-red-500 text-sm mt-1 hidden"></div>
+                </div>
+
+                <!-- Date Selection -->
+                <div>
+                    <label id="dateLabel" class="block text-sm font-medium text-amber-900 mb-2">Service Date *</label>
+                    <input type="date" id="serviceDate" name="serviceDate" class="input-field w-full px-4 py-3 rounded-lg outline-none" required>
+                    <div id="dateError" class="text-red-500 text-sm mt-1 hidden"></div>
+                </div>
+
+                <!-- Hour Selection -->
+                <div>
+                    <label id="hoursLabel" class="block text-sm font-medium text-amber-900 mb-4">Select Hours *</label>
+                    <div class="hour-grid" id="hourGrid">
+                        <!-- Hours will be generated by JavaScript -->
+                    </div>
+                    <div id="hoursError" class="text-red-500 text-sm mt-2 hidden"></div>
+                    <div class="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <div class="flex items-center justify-between">
+                            <span id="nightSurchargeInfo" class="text-sm text-amber-800">Night hours (8PM-6AM): £70 booking fee | Day hours (7AM-7PM): £50 booking fee</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Cost Display -->
+                <div class="bg-amber-50 p-6 rounded-lg border border-amber-200">
+                    <div class="flex justify-between items-center text-lg font-semibold">
+                        <span id="totalLabel" class="text-amber-900">Total Cost:</span>
+                        <span id="totalCost" class="text-amber-800">£0</span>
+                    </div>
+                    <div id="costBreakdown" class="text-sm text-amber-700 mt-2"></div>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="flex items-start space-x-3">
+                    <input type="checkbox" id="terms" name="terms" class="mt-1 w-4 h-4 text-amber-800 rounded" required>
+                    <label for="terms" class="text-sm text-amber-900">
+                        <span id="termsText">I agree to the </span>
+                        <button type="button" id="showTermsBtn" class="text-amber-800 hover:underline font-medium">terms and conditions</button>
+                    </label>
+                </div>
+                <div id="termsError" class="text-red-500 text-sm hidden"></div>
+
+                <!-- Payment Section -->
+                <div class="bg-amber-50 p-6 rounded-lg border border-amber-200">
+                    <h3 class="text-lg font-semibold text-amber-900 mb-4">Secure Payment</h3>
+                    <p class="text-sm text-amber-800 mb-4">Complete your booking with secure Stripe payment processing.</p>
+                    <button type="submit" id="submitBtn" class="submit-button w-full py-4 text-white font-semibold rounded-lg">
+                        <span id="submitText">Book Service & Pay Now</span>
+                        <span id="loadingText" class="hidden">
+                            <span class="loading-spinner"></span>Processing Payment...
+                        </span>
+                    </button>
+                    <p class="text-xs text-amber-700 mt-2 text-center">Secure payment powered by Stripe</p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="hidden fixed inset-0 flex items-center justify-center z-50">
+            <div class="modal-backdrop absolute inset-0"></div>
+            <div class="card p-8 max-w-md mx-4 relative success-animation">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h3 id="successTitle" class="text-xl font-semibold text-amber-900 mb-2">Payment Successful!</h3>
+                    <p id="successDesc" class="text-amber-800 mb-4">Thank You For Making London Your Home</p>
+                    <p id="receiptInfo" class="text-sm text-amber-700 mb-6">A confirmation receipt has been sent to your email with all booking details.</p>
+                    <button id="closeSuccess" class="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2 rounded-lg hover:from-green-700 hover:to-green-800 transition-all">
+                        <span id="closeSuccessText">Close</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden fixed inset-0 flex items-center justify-center z-50">
+            <div class="modal-backdrop absolute inset-0"></div>
+            <div class="card p-8 max-w-md mx-4 relative error-shake">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </div>
+                    <h3 id="errorTitle" class="text-xl font-semibold text-red-900 mb-2">Payment Failed</h3>
+                    <p id="errorDesc" class="text-red-800 mb-6">There was an issue processing your payment. Please try again.</p>
+                    <button id="closeError" class="bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-2 rounded-lg hover:from-red-700 hover:to-red-800 transition-all">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terms Modal -->
+        <div id="termsModal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+            <div class="modal-backdrop absolute inset-0"></div>
+            <div class="card p-8 max-w-4xl mx-4 relative max-h-96 overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="termsModalTitle" class="text-xl font-semibold text-amber-900">Terms and Conditions</h3>
+                    <button id="closeTerms" class="text-amber-600 hover:text-amber-800">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="termsContent" class="text-amber-800 space-y-4">
+                    <div id="termsEnglish">
+                        <h4 class="font-semibold mb-4 text-lg">Dahab Services - Terms and Conditions</h4>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <h5 class="font-semibold mb-2">1. Introduction</h5>
+                                <p class="text-sm">Welcome to Dahab Services. These Terms and Conditions ("Terms") govern your use of our services. By booking or using any of our services, you acknowledge that you have read, understood, and agree to be bound by these Terms. Dahab Services is committed to providing professional, respectful, and reliable service, while protecting the rights and wellbeing of both clients and workers.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">2. Contact and Communication</h5>
+                                <p class="text-sm">Clients may contact Dahab Services through our official social media channels, WhatsApp, email at mylondon@dahabservice.com, or via the Connecteam platform. We encourage open and timely communication to facilitate bookings, support requests, feedback, and resolution of any issues.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">3. Booking and Payment</h5>
+                                <p class="text-sm mb-2">All service bookings must be made through Connecteam or our official communication channels. Full payment (including booking fee and service fee) is required at the time of booking and is processed securely via Connecteam. Please note, the booking fee is strictly non-refundable.</p>
+                                <ul class="list-disc pl-6 space-y-1 text-sm">
+                                    <li>Day hours (7AM-7PM): £50 booking fee</li>
+                                    <li>Night hours (8PM-6AM): £70 booking fee</li>
+                                    <li>Payment must be completed at time of booking</li>
+                                    <li>All payments are processed securely through Stripe</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">4. Cancellation Policy</h5>
+                                <p class="text-sm mb-2">Cancellations must be made at least twelve (12) hours prior to the scheduled service time. Notifications can be sent through any official contact method.</p>
+                                <ul class="list-disc pl-6 space-y-1 text-sm">
+                                    <li>The booking fee is always non-refundable</li>
+                                    <li>The service fee (excluding the booking fee) will be refunded in full if cancellation notice is given within the required timeframe</li>
+                                    <li>Failure to provide sufficient notice will result in forfeiture of both the booking fee and service fee</li>
+                                    <li>Refunds beyond this are considered on a case-by-case basis, dependent on the client's feedback and our investigation</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">5. Description of Services</h5>
+                                <p class="text-sm mb-2">Dahab Services offers a broad range of assistance designed to meet your needs, including but not limited to:</p>
+                                <ul class="list-disc pl-6 space-y-1 text-sm">
+                                    <li><strong>Childcare and Babysitting</strong> – Providing attentive and safe supervision to children, ensuring their wellbeing throughout the service. £40/hour</li>
+                                    <li><strong>Home Cleaning and Support</strong> – Tasks include deep cleaning, regular tidying, wiping surfaces, putting dishes in the sink, and other cleaning duties as agreed. Light Cleaning £25/hour, Deep Cleaning £50/hour (2 workers)</li>
+                                    <li><strong>Non-Medical Personal Assistance</strong> – Support with dressing, personal care, light tasks, and companionship designed for seniors, new mothers, or individuals requiring respectful in-home care. £30/hour</li>
+                                    <li><strong>Errands and Delivery Services</strong> – Handling grocery shopping, parcel collection, and urgent last-minute errands. Shopping Assistant £25/hour, Shopping on Your Behalf £30/hour</li>
+                                    <li><strong>Hospital & Appointment Companion</strong> – Accompaniment to medical appointments and hospital visits. £35/hour</li>
+                                    <li><strong>Elderly Care</strong> – Specialized care for elderly clients including companionship and assistance. £40/hour</li>
+                                    <li><strong>Laundry Services</strong> – Washing, drying, folding, and ironing clothing per client instructions</li>
+                                    <li><strong>Meal Preparation</strong> – Basic meal preparation and serving assistance</li>
+                                    <li><strong>Organizing and Decluttering</strong> – Household arrangement, closet organization, and maintaining order</li>
+                                    <li><strong>Pet Care Assistance</strong> – Feeding, walking, and providing companionship for pets</li>
+                                </ul>
+                                <p class="text-sm mt-2">For health and safety reasons, workers are prohibited from lifting heavy items or moving furniture. Any additional tasks not explicitly listed must be approved in advance.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">6. Client Responsibilities</h5>
+                                <p class="text-sm">Clients are responsible for providing a safe working environment, clear instructions, and necessary supplies for the requested services.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">7. Satisfaction and Complaints</h5>
+                                <p class="text-sm">We strive for complete client satisfaction. Any concerns should be reported immediately through our official communication channels.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">8. Liability for Damages and Missing Items</h5>
+                                <p class="text-sm">Dahab Services maintains appropriate insurance coverage. Any damages or missing items should be reported within 24 hours of service completion.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">9. Client Conduct and Zero Tolerance Policy</h5>
+                                <p class="text-sm">We maintain a zero tolerance policy for inappropriate behavior, harassment, or unsafe conditions. We reserve the right to terminate services immediately in such cases.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">10. Data Privacy and Security</h5>
+                                <p class="text-sm">Client information is handled in accordance with UK data protection laws. We do not share personal information with third parties without consent.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">11. Legal Compliance and Client Rights</h5>
+                                <p class="text-sm">All services are provided in compliance with UK employment and consumer protection laws. Clients have the right to fair treatment and quality service.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">12. Changes to Terms and Conditions</h5>
+                                <p class="text-sm">Dahab Services reserves the right to update these terms. Clients will be notified of significant changes through our official communication channels.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">13. Acceptance of Terms</h5>
+                                <p class="text-sm">By using our services, you confirm that you have read, understood, and agree to these Terms and Conditions. Thank You For Making London Your Home - Dahab Services.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="termsArabic" class="hidden">
+                        <h4 class="font-semibold mb-4 text-lg">خدمات الذهب - الشروط والأحكام</h4>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <h5 class="font-semibold mb-2">1. المقدمة</h5>
+                                <p class="text-sm">مرحباً بكم في خدمات الذهب. تحكم هذه الشروط والأحكام ("الشروط") استخدامكم لخدماتنا. من خلال حجز أو استخدام أي من خدماتنا، فإنكم تقرون بأنكم قد قرأتم وفهمتم ووافقتم على الالتزام بهذه الشروط. تلتزم خدمات الذهب بتقديم خدمة مهنية ومحترمة وموثوقة، مع حماية حقوق ورفاهية كل من العملاء والعمال.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">2. التواصل والاتصال</h5>
+                                <p class="text-sm">يمكن للعملاء التواصل مع خدمات الذهب من خلال قنوات التواصل الاجتماعي الرسمية، الواتساب، البريد الإلكتروني على mylondon@dahabservice.com، أو عبر منصة Connecteam. نشجع التواصل المفتوح والمناسب لتسهيل الحجوزات وطلبات الدعم والملاحظات وحل أي مشاكل.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">3. الحجز والدفع</h5>
+                                <p class="text-sm mb-2">يجب إجراء جميع حجوزات الخدمة من خلال Connecteam أو قنوات التواصل الرسمية. الدفع الكامل (بما في ذلك رسوم الحجز ورسوم الخدمة) مطلوب وقت الحجز ويتم معالجته بأمان عبر Connecteam. يرجى ملاحظة أن رسوم الحجز غير قابلة للاسترداد بشكل صارم.</p>
+                                <ul class="list-disc pl-6 space-y-1 text-sm">
+                                    <li>الساعات النهارية (7 صباحاً - 7 مساءً): رسوم حجز £50</li>
+                                    <li>الساعات الليلية (8 مساءً - 6 صباحاً): رسوم حجز £70</li>
+                                    <li>يجب إكمال الدفع وقت الحجز</li>
+                                    <li>جميع المدفوعات تتم معالجتها بأمان من خلال Stripe</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">4. سياسة الإلغاء</h5>
+                                <p class="text-sm mb-2">يجب إجراء الإلغاءات قبل اثنتي عشرة (12) ساعة على الأقل من وقت الخدمة المجدول. يمكن إرسال الإشعارات من خلال أي طريقة اتصال رسمية.</p>
+                                <ul class="list-disc pl-6 space-y-1 text-sm">
+                                    <li>رسوم الحجز غير قابلة للاسترداد دائماً</li>
+                                    <li>سيتم استرداد رسوم الخدمة (باستثناء رسوم الحجز) بالكامل إذا تم إعطاء إشعار الإلغاء ضمن الإطار الزمني المطلوب</li>
+                                    <li>عدم تقديم إشعار كافٍ سيؤدي إلى فقدان كل من رسوم الحجز ورسوم الخدمة</li>
+                                    <li>الاستردادات بعد ذلك تُعتبر حسب كل حالة على حدة، اعتماداً على ملاحظات العميل وتحقيقنا</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">5. وصف الخدمات</h5>
+                                <p class="text-sm mb-2">تقدم خدمات الذهب مجموعة واسعة من المساعدة المصممة لتلبية احتياجاتكم، بما في ذلك على سبيل المثال لا الحصر:</p>
+                                <ul class="list-disc pl-6 space-y-1 text-sm">
+                                    <li><strong>رعاية الأطفال والحضانة</strong> – توفير إشراف منتبه وآمن للأطفال، ضمان رفاهيتهم طوال الخدمة. £40/ساعة</li>
+                                    <li><strong>التنظيف المنزلي والدعم</strong> – المهام تشمل التنظيف العميق، الترتيب المنتظم، مسح الأسطح، وضع الأطباق في الحوض، وواجبات التنظيف الأخرى حسب الاتفاق. التنظيف الخفيف £25/ساعة، التنظيف العميق £50/ساعة (عاملان)</li>
+                                    <li><strong>المساعدة الشخصية غير الطبية</strong> – الدعم في اللباس، الرعاية الشخصية، المهام الخفيفة، والرفقة المصممة لكبار السن، الأمهات الجدد، أو الأفراد الذين يحتاجون رعاية محترمة في المنزل. £30/ساعة</li>
+                                    <li><strong>خدمات المهام والتوصيل</strong> – التعامل مع التسوق للبقالة، جمع الطرود، والمهام العاجلة في اللحظة الأخيرة. مساعد التسوق £25/ساعة، التسوق نيابة عنك £30/ساعة</li>
+                                    <li><strong>مرافق المستشفى والمواعيد</strong> – المرافقة إلى المواعيد الطبية وزيارات المستشفى. £35/ساعة</li>
+                                    <li><strong>رعاية المسنين</strong> – رعاية متخصصة للعملاء المسنين تشمل الرفقة والمساعدة. £40/ساعة</li>
+                                    <li><strong>خدمات الغسيل</strong> – غسل وتجفيف وطي وكي الملابس حسب تعليمات العميل</li>
+                                    <li><strong>إعداد الوجبات</strong> – إعداد الوجبات الأساسية ومساعدة التقديم</li>
+                                    <li><strong>التنظيم والترتيب</strong> – ترتيب المنزل، تنظيم الخزانة، والحفاظ على النظام</li>
+                                    <li><strong>مساعدة رعاية الحيوانات الأليفة</strong> – إطعام ومشي وتوفير الرفقة للحيوانات الأليفة</li>
+                                </ul>
+                                <p class="text-sm mt-2">لأسباب الصحة والسلامة، يُمنع العمال من رفع الأشياء الثقيلة أو نقل الأثاث. أي مهام إضافية غير مدرجة صراحة يجب الموافقة عليها مسبقاً.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">6. مسؤوليات العميل</h5>
+                                <p class="text-sm">العملاء مسؤولون عن توفير بيئة عمل آمنة، تعليمات واضحة، واللوازم الضرورية للخدمات المطلوبة.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">7. الرضا والشكاوى</h5>
+                                <p class="text-sm">نسعى لرضا العميل الكامل. يجب الإبلاغ عن أي مخاوف فوراً من خلال قنوات التواصل الرسمية.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">8. المسؤولية عن الأضرار والأشياء المفقودة</h5>
+                                <p class="text-sm">تحتفظ خدمات الذهب بتغطية تأمينية مناسبة. يجب الإبلاغ عن أي أضرار أو أشياء مفقودة خلال 24 ساعة من إكمال الخدمة.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">9. سلوك العميل وسياسة عدم التسامح</h5>
+                                <p class="text-sm">نحتفظ بسياسة عدم التسامح مع السلوك غير المناسب أو التحرش أو الظروف غير الآمنة. نحتفظ بالحق في إنهاء الخدمات فوراً في مثل هذه الحالات.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">10. خصوصية البيانات والأمان</h5>
+                                <p class="text-sm">يتم التعامل مع معلومات العميل وفقاً لقوانين حماية البيانات في المملكة المتحدة. لا نشارك المعلومات الشخصية مع أطراف ثالثة بدون موافقة.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">11. الامتثال القانوني وحقوق العميل</h5>
+                                <p class="text-sm">جميع الخدمات تُقدم بما يتماشى مع قوانين التوظيف وحماية المستهلك في المملكة المتحدة. للعملاء الحق في المعاملة العادلة والخدمة الجيدة.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">12. تغييرات الشروط والأحكام</h5>
+                                <p class="text-sm">تحتفظ خدمات الذهب بالحق في تحديث هذه الشروط. سيتم إشعار العملاء بالتغييرات المهمة من خلال قنوات التواصل الرسمية.</p>
+                            </div>
+
+                            <div>
+                                <h5 class="font-semibold mb-2">13. قبول الشروط</h5>
+                                <p class="text-sm">باستخدام خدماتنا، تؤكدون أنكم قد قرأتم وفهمتم ووافقتم على هذه الشروط والأحكام. شكراً لك لجعل لندن منزلك - خدمات الذهب.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Stripe Configuration
+        const stripe = Stripe('pk_test_51Rzdkv8gTeFhZ0UGFuTez02NyaTPzSAgCNEzhSroqLZGueOnl4aBWn5nDUeei8mCCVS0CPZ89Ei1fEhUwbSbxRLI00Aw1ndy60');
+        
+        // EmailJS Configuration - Updated for new SDK
+        emailjs.init({
+            publicKey: '9GKGq43yXb4QNi39R', // Your actual EmailJS public key
+        });
+        
+        // State management
+        let isArabic = false;
+        let selectedHours = [];
+        let selectedService = '';
+        let isSubmitting = false;
+
+        // Services data with Arabic translations
+        const services = [
+            { value: "personal-care", label: "Personal Care £30/hr", labelAr: "الرعاية الشخصية £30/ساعة", rate: 30 },
+            { value: "light-cleaning", label: "Light Cleaning £25/hr", labelAr: "التنظيف الخفيف £25/ساعة", rate: 25 },
+            { value: "babysitting", label: "Babysitting/Child Care £40/hr", labelAr: "رعاية الأطفال £40/ساعة", rate: 40 },
+            { value: "hospital-companion", label: "Hospital & Appointment Companion £35/hr", labelAr: "مرافق المستشفى والمواعيد £35/ساعة", rate: 35 },
+            { value: "deep-cleaning", label: "Deep Cleaning £50/hr (2 workers)", labelAr: "التنظيف العميق £50/ساعة (عاملان)", rate: 50 },
+            { value: "shopping-assistant", label: "Shopping Assistant £25/hr", labelAr: "مساعد التسوق £25/ساعة", rate: 25 },
+            { value: "shopping-behalf", label: "Shopping on Your Behalf £30/hr", labelAr: "التسوق نيابة عنك £30/ساعة", rate: 30 },
+            { value: "elderly-care", label: "Elderly Care £40/hr", labelAr: "رعاية المسنين £40/ساعة", rate: 40 }
+        ];
+
+        // Translations
+        const translations = {
+            en: {
+                mainTitle: "Dahab Services",
+                tagline: "Making London Your Home",
+                formTitle: "Book Your Service",
+                formSubtitle: "Fill out the form below to schedule your appointment",
+                nameLabel: "Name *",
+                surnameLabel: "Surname *",
+                emailLabel: "Email *",
+                whatsappLabel: "WhatsApp Number *",
+                addressLabel: "Address *",
+                idUploadLabel: "Upload ID Document *",
+                idUploadHint: "Accepted formats: JPG, PNG, PDF (Max 5MB)",
+                serviceLabel: "Select Service *",
+                selectServiceOption: "Select a service",
+                dateLabel: "Service Date *",
+                hoursLabel: "Select Hours *",
+                nightSurchargeInfo: "Night hours (8PM-6AM): £70 booking fee | Day hours (7AM-7PM): £50 booking fee",
+                totalLabel: "Total Cost:",
+                termsText: "I agree to the ",
+                submitText: "Book Service & Pay Now",
+                loadingText: "Processing Payment...",
+                successTitle: "Payment Successful!",
+                successDesc: "Thank You For Making London Your Home",
+                receiptInfo: "A confirmation receipt has been sent to your email. Please check your spam/junk folder if you don't see it in your inbox.",
+                closeSuccessText: "Close",
+                termsModalTitle: "Terms and Conditions",
+                languageToggle: "العربية"
+            },
+            ar: {
+                mainTitle: "خدمات ذهب",
+                tagline: "لندن هو منزلك",
+                formTitle: "احجز خدمتك",
+                formSubtitle: "املأ النموذج أدناه لجدولة موعدك",
+                nameLabel: "الاسم *",
+                surnameLabel: "اللقب *",
+                emailLabel: "البريد الإلكتروني *",
+                whatsappLabel: "رقم الواتساب *",
+                addressLabel: "العنوان *",
+                idUploadLabel: "تحميل وثيقة الهوية *",
+                idUploadHint: "الصيغ المقبولة: JPG, PNG, PDF (حد أقصى 5 ميجابايت)",
+                serviceLabel: "اختر الخدمة *",
+                selectServiceOption: "اختر خدمة",
+                dateLabel: "تاريخ الخدمة *",
+                hoursLabel: "اختر الساعات *",
+                nightSurchargeInfo: "الساعات الليلية (8 مساءً - 6 صباحاً): رسوم حجز £70 | الساعات النهارية (7 صباحاً - 7 مساءً): رسوم حجز £50",
+                totalLabel: "التكلفة الإجمالية:",
+                termsText: "أوافق على ",
+                submitText: "احجز الخدمة وادفع الآن",
+                loadingText: "جاري معالجة الدفع...",
+                successTitle: "تم الدفع بنجاح!",
+                successDesc: "شكراً لك لجعل لندن منزلك - خدمات الذهب",
+                receiptInfo: "تم إرسال إيصال التأكيد إلى بريدك الإلكتروني. يرجى التحقق من مجلد الرسائل غير المرغوب فيها إذا لم تجده في صندوق الوارد.",
+                closeSuccessText: "إغلاق",
+                termsModalTitle: "الشروط والأحكام",
+                languageToggle: "English"
+            }
+        };
+
+        // Initialize the form
+        function init() {
+            generateHourGrid();
+            updateServiceOptions();
+            setMinDate();
+            attachEventListeners();
+            updateLanguage();
+            
+            // Check for successful payment from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session_id');
+            
+            if (sessionId) {
+                // Payment completed, now process the booking
+                handlePaymentReturn(sessionId);
+            } else if (urlParams.get('payment') === 'cancelled') {
+                showErrorModal('Payment was cancelled. Please try again.');
+            }
+        }
+
+        // Handle payment return from Stripe
+        async function handlePaymentReturn(sessionId) {
+            try {
+                console.log('🎯 Processing payment return with session ID:', sessionId);
+                
+                // Verify payment with backend
+                const response = await fetch('/api/verify-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ sessionId })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to verify payment');
+                }
+                
+                const paymentData = await response.json();
+                
+                if (paymentData.success && paymentData.bookingData) {
+                    console.log('✅ Payment verified, processing booking...');
+                    
+                    // Send booking to Connecteam (parallel execution)
+                    const connecteamPromise = sendToConnecteam(paymentData.bookingData);
+                    
+                    // Send email receipt (parallel execution)
+                    const emailPromise = sendEmailReceipt(paymentData.bookingData);
+                    
+                    // Wait for both to complete (but don't fail if one fails)
+                    const [connecteamResult, emailResult] = await Promise.allSettled([
+                        connecteamPromise,
+                        emailPromise
+                    ]);
+                    
+                    // Log results for debugging
+                    if (connecteamResult.status === 'fulfilled') {
+                        const result = connecteamResult.value;
+                        if (result.success) {
+                            console.log('✅ Connecteam booking created successfully:', result);
+                        } else {
+                            console.log('⚠️ Connecteam booking logged for manual processing:', result.message || result.note);
+                        }
+                    } else {
+                        console.warn('⚠️ Connecteam booking failed:', connecteamResult.reason);
+                    }
+                    
+                    if (emailResult.status === 'fulfilled') {
+                        console.log('✅ Email receipt sent:', emailResult.value);
+                    } else {
+                        console.warn('⚠️ Email receipt failed:', emailResult.reason);
+                    }
+                    
+                    // Show success message
+                    handlePaymentSuccess();
+                    
+                    // Clean up URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    throw new Error('Payment verification failed');
+                }
+            } catch (error) {
+                console.error('Error processing payment return:', error);
+                showErrorModal('There was an issue verifying your payment. Please contact support if your payment was charged.');
+            }
+        }
+
+        // Generate hour grid (24 hours)
+        function generateHourGrid() {
+            const hourGrid = document.getElementById('hourGrid');
+            hourGrid.innerHTML = '';
+            
+            for (let hour = 0; hour < 24; hour++) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'hour-button px-3 py-2 border-2 border-amber-300 rounded-lg text-sm font-medium hover:border-amber-600 transition-all text-amber-900';
+                button.textContent = `${hour.toString().padStart(2, '0')}:00`;
+                button.dataset.hour = hour;
+                
+                // Mark night hours
+                if (hour >= 20 || hour <= 5) {
+                    button.classList.add('night-hour');
+                }
+                
+                button.addEventListener('click', () => toggleHour(hour, button));
+                hourGrid.appendChild(button);
+            }
+        }
+
+        // Toggle hour selection
+        function toggleHour(hour, button) {
+            const index = selectedHours.indexOf(hour);
+            
+            if (index > -1) {
+                selectedHours.splice(index, 1);
+                button.classList.remove('selected-hour');
+                button.classList.add('border-amber-300');
+            } else {
+                selectedHours.push(hour);
+                button.classList.add('selected-hour');
+                button.classList.remove('border-amber-300');
+            }
+            
+            updateTotalCost();
+            clearError('hoursError');
+        }
+
+        // Update service options based on language
+        function updateServiceOptions() {
+            const serviceSelect = document.getElementById('service');
+            const selectOption = serviceSelect.querySelector('option[value=""]');
+            
+            // Clear existing options except the first one
+            serviceSelect.innerHTML = '';
+            serviceSelect.appendChild(selectOption);
+            
+            services.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.value;
+                option.dataset.rate = service.rate;
+                option.textContent = isArabic ? service.labelAr : service.label;
+                serviceSelect.appendChild(option);
+            });
+        }
+
+        // Set minimum date to today
+        function setMinDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('serviceDate').min = today;
+        }
+
+        // Calculate total cost with VAT
+        function calculateTotalCost() {
+            if (!selectedService || selectedHours.length === 0) return 0;
+            
+            const serviceData = services.find(s => s.value === selectedService);
+            if (!serviceData) return 0;
+            
+            const serviceTotal = serviceData.rate * selectedHours.length;
+            const hasNightHours = selectedHours.some(hour => hour >= 20 || hour <= 5);
+            const bookingFee = hasNightHours ? 70 : 50;
+            const subtotal = serviceTotal + bookingFee;
+            const vat = subtotal * 0.20; // 20% VAT
+            
+            return subtotal + vat;
+        }
+        
+        // Calculate cost breakdown
+        function getCostBreakdown() {
+            if (!selectedService || selectedHours.length === 0) return null;
+            
+            const serviceData = services.find(s => s.value === selectedService);
+            if (!serviceData) return null;
+            
+            const serviceTotal = serviceData.rate * selectedHours.length;
+            const hasNightHours = selectedHours.some(hour => hour >= 20 || hour <= 5);
+            const bookingFee = hasNightHours ? 70 : 50;
+            const subtotal = serviceTotal + bookingFee;
+            const vat = subtotal * 0.20; // 20% VAT
+            const total = subtotal + vat;
+            
+            return {
+                serviceTotal,
+                bookingFee,
+                subtotal,
+                vat,
+                total,
+                hours: selectedHours.length,
+                serviceName: serviceData.label,
+                hasNightHours
+            };
+        }
+
+        // Update total cost display
+        function updateTotalCost() {
+            const breakdown = getCostBreakdown();
+            const totalElement = document.getElementById('totalCost');
+            const breakdownElement = document.getElementById('costBreakdown');
+            
+            if (!breakdown) {
+                totalElement.textContent = '£0.00';
+                breakdownElement.innerHTML = '';
+                return;
+            }
+            
+            totalElement.textContent = `£${breakdown.total.toFixed(2)}`;
+            
+            // Update breakdown display
+            breakdownElement.innerHTML = `
+                <div class="text-sm text-amber-700 space-y-1">
+                    <div class="flex justify-between">
+                        <span>Service (${breakdown.hours} hours × £${(breakdown.serviceTotal / breakdown.hours).toFixed(0)})</span>
+                        <span>£${breakdown.serviceTotal.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Booking Fee ${breakdown.hasNightHours ? '(Night Hours)' : '(Day Hours)'}</span>
+                        <span>£${breakdown.bookingFee.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between border-t pt-1">
+                        <span>Subtotal</span>
+                        <span>£${breakdown.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>VAT (20%)</span>
+                        <span>£${breakdown.vat.toFixed(2)}</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-amber-900 border-t pt-1">
+                        <span>Total</span>
+                        <span>£${breakdown.total.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Language toggle
+        function toggleLanguage() {
+            isArabic = !isArabic;
+            updateLanguage();
+            updateServiceOptions();
+            
+            // Toggle terms content
+            const termsEnglish = document.getElementById('termsEnglish');
+            const termsArabic = document.getElementById('termsArabic');
+            
+            if (isArabic) {
+                termsEnglish.classList.add('hidden');
+                termsArabic.classList.remove('hidden');
+            } else {
+                termsEnglish.classList.remove('hidden');
+                termsArabic.classList.add('hidden');
+            }
+        }
+
+        // Update language
+        function updateLanguage() {
+            const lang = isArabic ? 'ar' : 'en';
+            const t = translations[lang];
+            
+            // Update text content
+            Object.keys(t).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.textContent = t[key];
+                }
+            });
+            
+            // Update document direction
+            document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
+            document.documentElement.lang = lang;
+            
+            // Update service options
+            updateServiceOptions();
+        }
+
+        // Create Stripe Checkout Session
+        async function createCheckoutSession(bookingData) {
+            try {
+                const breakdown = getCostBreakdown();
+                if (!breakdown) {
+                    throw new Error('Unable to calculate cost breakdown');
+                }
+                
+                // Prepare line items for Stripe
+                const lineItems = [
+                    {
+                        price_data: {
+                            currency: 'gbp',
+                            product_data: {
+                                name: `${breakdown.serviceName} - ${breakdown.hours} hours`,
+                                description: `Service for ${bookingData.serviceDate} at ${bookingData.address}`,
+                            },
+                            unit_amount: Math.round(breakdown.serviceTotal * 100), // Convert to pence
+                        },
+                        quantity: 1,
+                    },
+                    {
+                        price_data: {
+                            currency: 'gbp',
+                            product_data: {
+                                name: `Booking Fee ${breakdown.hasNightHours ? '(Night Hours)' : '(Day Hours)'}`,
+                                description: breakdown.hasNightHours ? 'Night hours (8PM-6AM)' : 'Day hours (7AM-7PM)',
+                            },
+                            unit_amount: Math.round(breakdown.bookingFee * 100), // Convert to pence
+                        },
+                        quantity: 1,
+                    }
+                ];
+
+                // In a real implementation, this would call your backend
+                // Your backend should create a Stripe session with these line items and automatic tax
+                const response = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...bookingData,
+                        lineItems,
+                        totalAmount: breakdown.total,
+                        vatAmount: breakdown.vat,
+                        subtotal: breakdown.subtotal
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to create checkout session: ${response.status} - ${errorText}`);
+                }
+                
+                const session = await response.json();
+                
+                // Check if we got a real Stripe checkout URL
+                if (session.checkoutUrl) {
+                    // Redirect to Stripe checkout
+                    console.log('🔄 Redirecting to Stripe checkout:', session.checkoutUrl);
+                    window.location.href = session.checkoutUrl;
+                    return session;
+                }
+                
+                // Check if this is test mode (keeping for backwards compatibility)
+                if (session.testMode) {
+                    console.log('🧪 Test mode detected - simulating payment success');
+                    // Simulate payment delay
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // Return success to trigger booking processing
+                    return {
+                        success: true,
+                        sessionId: session.sessionId,
+                        testMode: true
+                    };
+                }
+                
+                throw new Error('No checkout URL received from server');
+                
+            } catch (error) {
+                console.error('Error creating checkout session:', error);
+                throw error; // Don't fall back to simulation, throw the error
+            }
+        }
+
+        // Simulate checkout for demo purposes
+        function simulateCheckout(bookingData) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // Simulate successful payment
+                    resolve({
+                        success: true,
+                        sessionId: 'cs_demo_' + Date.now(),
+                        paymentIntentId: 'pi_demo_' + Date.now()
+                    });
+                }, 2000);
+            });
+        }
+
+        // Send email receipt
+        async function sendEmailReceipt(bookingData) {
+            try {
+                const breakdown = getCostBreakdown();
+                
+                // Create HTML email template with form styling
+                const emailTemplate = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Booking Receipt - Dahab Services</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                        
+                        * {
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }
+                        
+                        body {
+                            font-family: 'Inter', Arial, sans-serif;
+                            line-height: 1.6;
+                            color: #374151;
+                            background: linear-gradient(135deg, #FBF8F3 0%, #F3E8D3 100%);
+                            padding: 20px;
+                            margin: 0;
+                        }
+                        
+                        .container {
+                            max-width: 650px;
+                            margin: 0 auto;
+                            background: #ffffff;
+                            border-radius: 16px;
+                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                            overflow: hidden;
+                        }
+                        
+                        .header {
+                            background: linear-gradient(135deg, #8B7355 0%, #A0886F 100%);
+                            color: white;
+                            padding: 40px 30px;
+                            text-align: center;
+                            position: relative;
+                        }
+                        
+                        .header::before {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+                        }
+                        
+                        .header-content {
+                            position: relative;
+                            z-index: 1;
+                        }
+                        
+                        .company-name {
+                            font-size: 32px;
+                            font-weight: 700;
+                            margin-bottom: 8px;
+                            letter-spacing: -0.5px;
+                        }
+                        
+                        .tagline {
+                            font-size: 18px;
+                            opacity: 0.9;
+                            font-weight: 400;
+                        }
+                        
+                        .success-banner {
+                            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                            color: white;
+                            padding: 30px;
+                            text-align: center;
+                            position: relative;
+                        }
+                        
+                        .success-icon {
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 60px;
+                            height: 60px;
+                            background: rgba(255, 255, 255, 0.2);
+                            border-radius: 50%;
+                            margin-bottom: 16px;
+                            font-size: 28px;
+                            font-weight: bold;
+                            line-height: 1;
+                            text-align: center;
+                            vertical-align: middle;
+                        }
+                        
+                        .success-title {
+                            font-size: 26px;
+                            font-weight: 600;
+                            margin-bottom: 8px;
+                        }
+                        
+                        .success-desc {
+                            font-size: 16px;
+                            opacity: 0.95;
+                        }
+                        
+                        .content {
+                            padding: 40px 30px;
+                        }
+                        
+                        .section {
+                            margin-bottom: 32px;
+                        }
+                        
+                        .section-title {
+                            font-size: 20px;
+                            font-weight: 600;
+                            color: #8B7355;
+                            margin-bottom: 20px;
+                            padding-bottom: 8px;
+                            border-bottom: 2px solid #E5D5C8;
+                            display: flex;
+                            align-items: center;
+                        }
+                        
+                        .section-title::before {
+                            content: '';
+                            width: 4px;
+                            height: 20px;
+                            background: #E5D5C8;
+                            margin-right: 12px;
+                            border-radius: 2px;
+                        }
+                        
+                        .info-box {
+                            background: linear-gradient(135deg, #FEFDFB 0%, #F8F4ED 100%);
+                            border: 1px solid #E5D5C8;
+                            border-radius: 12px;
+                            padding: 24px;
+                            margin-bottom: 24px;
+                        }
+                        
+                        .info-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        
+                        .info-table tr {
+                            border-bottom: 1px solid rgba(139, 115, 85, 0.1);
+                        }
+                        
+                        .info-table tr:last-child {
+                            border-bottom: none;
+                        }
+                        
+                        .info-table td {
+                            padding: 12px 0;
+                            vertical-align: top;
+                        }
+                        
+                        .info-label {
+                            font-weight: 600;
+                            color: #8B7355;
+                            width: 140px;
+                            min-width: 140px;
+                        }
+                        
+                        .info-value {
+                            color: #374151;
+                            word-break: break-word;
+                        }
+                        
+                        .payment-summary {
+                            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+                            border: 2px solid #8B7355;
+                            border-radius: 12px;
+                            padding: 24px;
+                            margin-bottom: 24px;
+                        }
+                        
+                        .payment-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        
+                        .payment-table tr {
+                            border-bottom: 1px solid rgba(139, 115, 85, 0.15);
+                        }
+                        
+                        .payment-table tr:last-child {
+                            border-bottom: none;
+                        }
+                        
+                        .payment-table td {
+                            padding: 10px 0;
+                        }
+                        
+                        .payment-label {
+                            color: #374151;
+                        }
+                        
+                        .payment-amount {
+                            text-align: right;
+                            font-weight: 500;
+                            color: #374151;
+                        }
+                        
+                        .payment-subtotal {
+                            border-top: 2px solid #8B7355 !important;
+                            font-weight: 600;
+                            color: #8B7355;
+                        }
+                        
+                        .payment-total {
+                            border-top: 3px solid #8B7355 !important;
+                            font-weight: 700;
+                            font-size: 18px;
+                            color: #8B7355;
+                        }
+                        
+                        .payment-total td {
+                            padding: 16px 0 8px 0;
+                        }
+                        
+                        .thank-you {
+                            background: linear-gradient(135deg, #8B7355 0%, #A0886F 100%);
+                            color: white;
+                            border-radius: 12px;
+                            padding: 32px;
+                            text-align: center;
+                            margin: 32px 0;
+                            position: relative;
+                            overflow: hidden;
+                        }
+                        
+                        .thank-you::before {
+                            content: '';
+                            position: absolute;
+                            top: -50%;
+                            left: -50%;
+                            width: 200%;
+                            height: 200%;
+                            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+                            animation: shimmer 3s ease-in-out infinite;
+                        }
+                        
+                        @keyframes shimmer {
+                            0%, 100% { transform: translateX(-100%) translateY(-100%); }
+                            50% { transform: translateX(0%) translateY(0%); }
+                        }
+                        
+                        .thank-you-content {
+                            position: relative;
+                            z-index: 1;
+                        }
+                        
+                        .thank-you h3 {
+                            font-size: 24px;
+                            font-weight: 600;
+                            margin-bottom: 12px;
+                        }
+                        
+                        .thank-you p {
+                            font-size: 16px;
+                            opacity: 0.95;
+                        }
+                        
+                        .next-steps {
+                            background: linear-gradient(135deg, #E6F3FF 0%, #D1E7DD 100%);
+                            border: 1px solid #B6E5D8;
+                            border-radius: 12px;
+                            padding: 24px;
+                            margin-bottom: 24px;
+                        }
+                        
+                        .next-steps h4 {
+                            color: #1e40af;
+                            font-size: 18px;
+                            font-weight: 600;
+                            margin-bottom: 16px;
+                            display: flex;
+                            align-items: center;
+                        }
+                        
+                        .next-steps h4::before {
+                            content: '📋';
+                            margin-right: 8px;
+                            font-size: 20px;
+                        }
+                        
+                        .next-steps ul {
+                            color: #1e3a8a;
+                            margin: 0;
+                            padding-left: 20px;
+                        }
+                        
+                        .next-steps li {
+                            margin-bottom: 8px;
+                            line-height: 1.5;
+                        }
+                        
+                        .contact-info {
+                            background: #f9fafb;
+                            border-radius: 12px;
+                            padding: 24px;
+                            margin-bottom: 24px;
+                            border: 1px solid #e5e7eb;
+                        }
+                        
+                        .contact-info h4 {
+                            color: #8B7355;
+                            font-size: 18px;
+                            font-weight: 600;
+                            margin-bottom: 16px;
+                            display: flex;
+                            align-items: center;
+                        }
+                        
+                        .contact-info h4::before {
+                            content: '📞';
+                            margin-right: 8px;
+                            font-size: 20px;
+                        }
+                        
+                        .footer {
+                            background: linear-gradient(135deg, #8B7355 0%, #A0886F 100%);
+                            color: white;
+                            padding: 32px;
+                            text-align: center;
+                        }
+                        
+                        .footer-brand {
+                            font-size: 20px;
+                            font-weight: 600;
+                            margin-bottom: 8px;
+                        }
+                        
+                        .footer-note {
+                            font-size: 14px;
+                            opacity: 0.8;
+                            margin-top: 16px;
+                        }
+                        
+                        .booking-ref {
+                            background: #FEFDFB;
+                            border: 1px solid #E5D5C8;
+                            border-radius: 8px;
+                            padding: 16px;
+                            margin-bottom: 24px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            flex-wrap: wrap;
+                        }
+                        
+                        .booking-ref-item {
+                            text-align: center;
+                        }
+                        
+                        .booking-ref-label {
+                            font-size: 12px;
+                            color: #8B7355;
+                            font-weight: 500;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        }
+                        
+                        .booking-ref-value {
+                            font-size: 16px;
+                            font-weight: 600;
+                            color: #8B7355;
+                            margin-top: 4px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <!-- Header -->
+                        <div class="header">
+                            <div class="header-content">
+                                <h1 class="company-name">Dahab Services</h1>
+                                <p class="tagline">Making London Your Home</p>
+                            </div>
+                        </div>
+
+                        <!-- Success Banner -->
+                        <div class="success-banner">
+                            <div class="success-icon">✓</div>
+                            <h2 class="success-title">Payment Successful!</h2>
+                            <p class="success-desc">Your booking has been confirmed and payment processed successfully</p>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="content">
+                            <!-- Booking Reference -->
+                            <div class="booking-ref">
+                                <div class="booking-ref-item">
+                                    <div class="booking-ref-label">Booking Reference</div>
+                                    <div class="booking-ref-value">#DH-${bookingData.name}-${bookingData.serviceDate}</div>
+                                </div>
+                                <div class="booking-ref-item">
+                                    <div class="booking-ref-label">Booking Date</div>
+                                    <div class="booking-ref-value">${bookingData.serviceDate}</div>
+                                </div>
+                            </div>
+
+                            <!-- Customer Information -->
+                            <div class="section">
+                                <h3 class="section-title">Customer Information</h3>
+                                <div class="info-box">
+                                    <table class="info-table">
+                                        <tr>
+                                            <td class="info-label">Full Name:</td>
+                                            <td class="info-value">${bookingData.name} ${bookingData.surname}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="info-label">Email Address:</td>
+                                            <td class="info-value">${bookingData.email}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="info-label">WhatsApp:</td>
+                                            <td class="info-value">${bookingData.whatsapp}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="info-label">Service Address:</td>
+                                            <td class="info-value">${bookingData.address}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Service Details -->
+                            <div class="section">
+                                <h3 class="section-title">Service Details</h3>
+                                <div class="info-box">
+                                    <table class="info-table">
+                                        <tr>
+                                            <td class="info-label">Service Type:</td>
+                                            <td class="info-value">${breakdown.serviceName}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="info-label">Service Date:</td>
+                                            <td class="info-value">${bookingData.serviceDate}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="info-label">Time Slots:</td>
+                                            <td class="info-value">${bookingData.selectedHours.join(', ')}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="info-label">Total Hours:</td>
+                                            <td class="info-value">${breakdown.hours} hours</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Payment Summary -->
+                            <div class="section">
+                                <h3 class="section-title">Payment Summary</h3>
+                                <div class="payment-summary">
+                                    <table class="payment-table">
+                                        <tr>
+                                            <td class="payment-label">Service Cost (${breakdown.hours} hours):</td>
+                                            <td class="payment-amount">£${breakdown.serviceTotal.toFixed(2)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="payment-label">Booking Fee ${breakdown.hasNightHours ? '(Night Hours)' : '(Day Hours)'}:</td>
+                                            <td class="payment-amount">£${breakdown.bookingFee.toFixed(2)}</td>
+                                        </tr>
+                                        <tr class="payment-subtotal">
+                                            <td class="payment-label">Subtotal:</td>
+                                            <td class="payment-amount">£${breakdown.subtotal.toFixed(2)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="payment-label">VAT (20%):</td>
+                                            <td class="payment-amount">£${breakdown.vat.toFixed(2)}</td>
+                                        </tr>
+                                        <tr class="payment-total">
+                                            <td class="payment-label"><strong>Total Paid:</strong></td>
+                                            <td class="payment-amount"><strong>£${breakdown.total.toFixed(2)}</strong></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Next Steps -->
+                            <div class="next-steps">
+                                <h4>What Happens Next?</h4>
+                                <ul>
+                                    <li><strong>Worker Assignment:</strong> Our team will assign a qualified worker to your booking within 24 hours</li>
+                                    <li><strong>WhatsApp Confirmation:</strong> You'll receive worker details and contact information via WhatsApp</li>
+                                    <li><strong>Service Day:</strong> Your assigned worker will arrive at your address at the scheduled time</li>
+                                    <li><strong>Support:</strong> Contact us anytime if you have questions or need to make changes</li>
+                                </ul>
+                            </div>
+
+                            <!-- Contact Information -->
+                            <div class="contact-info">
+                                <h4>Need Assistance?</h4>
+                                <table class="info-table">
+                                    <tr>
+                                        <td class="info-label">Email:</td>
+                                        <td class="info-value">mylondon@dahabservice.com</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="info-label">WhatsApp:</td>
+                                        <td class="info-value">Send us a message for immediate support</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="info-label">Management:</td>
+                                        <td class="info-value">Connecteam Platform (for booking updates)</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- Thank You Section -->
+                            <div class="thank-you">
+                                <div class="thank-you-content">
+                                    <h3>Thank You for Choosing Dahab Services!</h3>
+                                    <p>We're honored to help make London your home. Your trust in our services means everything to us.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="footer">
+                            <div class="footer-brand">Dahab Services</div>
+                            <p>Making London Your Home</p>
+                            <p class="footer-note">This is an automated receipt. Please keep it for your records.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                `;
+
+                // EmailJS data - EXACT match with template variables
+                const emailData = {
+                    // Required by EmailJS system
+                    to_email: bookingData.email,
+                    // All template variables (matching your EmailJS template exactly)
+                    customer_name: bookingData.name,
+                    customer_surname: bookingData.surname,
+                    customer_email: bookingData.email, // Added this for the template
+                    customer_whatsapp: bookingData.whatsapp, // Added this for the template
+                    service_name: breakdown.serviceName,
+                    service_date: bookingData.serviceDate,
+                    service_address: bookingData.address,
+                    selected_hours: bookingData.selectedHours.join(', '),
+                    total_hours: breakdown.hours.toString(),
+                    service_total: breakdown.serviceTotal.toFixed(2),
+                    booking_fee: breakdown.bookingFee.toFixed(2),
+                    booking_fee_type: breakdown.hasNightHours ? '(Night Hours)' : '(Day Hours)',
+                    subtotal: breakdown.subtotal.toFixed(2),
+                    vat_amount: breakdown.vat.toFixed(2),
+                    total_amount: breakdown.total.toFixed(2)
+                };
+
+                // Replace with your actual EmailJS credentials
+                const serviceId = 'service_a7dgx7g';
+                const templateId = 'template_2hvvc3w';
+                
+                console.log('Attempting to send email with data:', emailData);
+                console.log('Using ServiceID:', serviceId, 'TemplateID:', templateId);
+                
+                // Debug: Show all the variables being sent
+                console.log('Email variables being sent:');
+                console.log('- to_email:', emailData.to_email);
+                console.log('- customer_name:', emailData.customer_name);
+                console.log('- customer_surname:', emailData.customer_surname);
+                console.log('- customer_email:', emailData.customer_email);
+                console.log('- customer_whatsapp:', emailData.customer_whatsapp);
+                console.log('- service_name:', emailData.service_name);
+                console.log('- service_date:', emailData.service_date);
+                console.log('- service_address:', emailData.service_address);
+                console.log('- selected_hours:', emailData.selected_hours);
+                console.log('- total_hours:', emailData.total_hours);
+                console.log('- service_total:', emailData.service_total);
+                console.log('- booking_fee:', emailData.booking_fee);
+                console.log('- subtotal:', emailData.subtotal);
+                console.log('- vat_amount:', emailData.vat_amount);
+                console.log('- total_amount:', emailData.total_amount);
+                
+                if (serviceId === 'YOUR_EMAILJS_SERVICE_ID') {
+                    console.log('EmailJS not configured. Email template prepared:', emailData);
+                    console.log('To enable email functionality, sign up at https://www.emailjs.com/ and replace the credentials');
+                    return { success: false, message: 'Email service not configured' };
+                }
+                
+                try {
+                    // Updated EmailJS send syntax for new SDK version
+                    const result = await emailjs.send(serviceId, templateId, emailData);
+                    console.log('Receipt email sent successfully:', result);
+                    return { success: true };
+                } catch (emailError) {
+                    console.error('EmailJS specific error:', emailError);
+                    
+                    // Handle common EmailJS errors
+                    if (emailError.status === 418) {
+                        console.error('EmailJS Error 418: Possible template or authentication issue');
+                        console.error('Check: 1) Template variables, 2) Service connection, 3) Template content');
+                    } else if (emailError.status === 400) {
+                        console.error('EmailJS Error 400: Bad request - check template variables');
+                    } else if (emailError.status === 403) {
+                        console.error('EmailJS Error 403: Authentication failed - check your credentials');
+                    }
+                    
+                    return { success: false, error: `EmailJS Error ${emailError.status}: ${emailError.message || emailError.text}` };
+                }
+            } catch (error) {
+                console.error('General error in sendEmailReceipt:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Save to Google Sheets (placeholder function)
+        async function saveToGoogleSheets(bookingData) {
+            try {
+                // This would integrate with Google Sheets API
+                // For demo purposes, we'll just log the data
+                console.log('Saving to Google Sheets:', bookingData);
+                
+                // In a real implementation, you would call your backend endpoint
+                // that handles Google Sheets integration
+                const response = await fetch('/api/save-booking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(bookingData)
+                });
+                
+                if (response.ok) {
+                    console.log('Data saved to Google Sheets successfully');
+                }
+            } catch (error) {
+                console.error('Error saving to Google Sheets:', error);
+            }
+        }
+
+        // Send booking details to Connecteam
+        async function sendToConnecteam(bookingData) {
+            try {
+                const breakdown = getCostBreakdown();
+                
+                // Prepare booking details for Connecteam
+                const connecteamData = {
+                    client_name: `${bookingData.name} ${bookingData.surname}`,
+                    client_email: bookingData.email,
+                    client_phone: bookingData.whatsapp,
+                    service_address: bookingData.address,
+                    service_type: bookingData.service,
+                    service_date: bookingData.serviceDate,
+                    service_hours: bookingData.selectedHours,
+                    total_hours: bookingData.selectedHours.length,
+                    service_cost: breakdown.serviceTotal,
+                    booking_fee: breakdown.bookingFee,
+                    vat_amount: breakdown.vat,
+                    total_amount: breakdown.total,
+                    has_night_hours: breakdown.hasNightHours,
+                    booking_timestamp: new Date().toISOString(),
+                    status: 'pending_assignment',
+                    notes: `Service: ${breakdown.serviceName}, Hours: ${bookingData.selectedHours.join(', ')}`
+                };
+
+                // Use proxy server endpoint instead of direct API call
+                const proxyUrl = '/api/connecteam-booking';
+
+                console.log('Sending to Connecteam via proxy:', connecteamData);
+
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(connecteamData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        console.log('✅ Connecteam booking created via proxy:', result);
+                        return result;
+                    } else {
+                        // Don't throw error for API discovery mode, just log it
+                        console.warn('⚠️ Connecteam API in discovery mode:', result.message);
+                        console.log('📋 Booking logged for manual processing:', result.booking_logged);
+                        return { 
+                            success: false, 
+                            message: result.message,
+                            booking_logged: result.booking_logged,
+                            mode: 'development'
+                        };
+                    }
+                } else {
+                    const errorData = await response.json();
+                    console.error('❌ Proxy server error:', errorData);
+                    return { 
+                        success: false, 
+                        error: `Proxy error: ${response.status}`,
+                        details: errorData 
+                    };
+                }
+            } catch (error) {
+                console.error('Error sending to Connecteam:', error);
+                // Don't fail the entire process if Connecteam is down
+                // Return a graceful error response instead
+                return { 
+                    error: error.message, 
+                    success: false,
+                    mode: 'development',
+                    note: 'Connecteam integration in progress. Booking details logged for manual processing.'
+                };
+            }
+        }
+
+        // Form validation
+        function validateForm() {
+            let isValid = true;
+            
+            // Clear previous errors
+            document.querySelectorAll('.text-red-500').forEach(el => el.classList.add('hidden'));
+            
+            // Validate required fields
+            const requiredFields = ['name', 'surname', 'email', 'whatsapp', 'address', 'service', 'serviceDate'];
+            
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field);
+                if (!element.value.trim()) {
+                    showError(`${field}Error`, 'This field is required');
+                    isValid = false;
+                }
+            });
+
+            // Validate ID upload
+            const idUpload = document.getElementById('idUpload');
+            if (!idUpload.files || idUpload.files.length === 0) {
+                showError('idUploadError', 'Please upload an ID document');
+                isValid = false;
+            } else {
+                const file = idUpload.files[0];
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+                const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+                
+                if (!validTypes.includes(file.type)) {
+                    showError('idUploadError', 'Please upload a JPG, PNG, or PDF file');
+                    isValid = false;
+                } else if (file.size > maxSize) {
+                    showError('idUploadError', 'File size must be less than 5MB');
+                    isValid = false;
+                } else {
+                    // Show success indicator
+                    const successElement = document.getElementById('idUploadSuccess');
+                    if (successElement) {
+                        successElement.classList.remove('hidden');
+                    }
+                }
+            }
+            
+            // Validate email format
+            const email = document.getElementById('email').value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (email && !emailRegex.test(email)) {
+                showError('emailError', 'Please enter a valid email address');
+                isValid = false;
+            }
+            
+            // Validate hours selection
+            if (selectedHours.length === 0) {
+                showError('hoursError', 'Please select at least one hour');
+                isValid = false;
+            }
+            
+            // Validate terms acceptance
+            if (!document.getElementById('terms').checked) {
+                showError('termsError', 'Please accept the terms and conditions');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // Show error message
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+            }
+        }
+
+        // Clear error message
+        function clearError(elementId) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.classList.add('hidden');
+            }
+        }
+
+        // Handle form submission
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            if (isSubmitting) return;
+            
+            if (!validateForm()) {
+                return;
+            }
+            
+            isSubmitting = true;
+            
+            // Show loading state
+            document.getElementById('submitText').classList.add('hidden');
+            document.getElementById('loadingText').classList.remove('hidden');
+            document.getElementById('submitBtn').disabled = true;
+            
+            try {
+                // Collect form data
+                const formData = new FormData(event.target);
+                const serviceData = services.find(s => s.value === formData.get('service'));
+                const breakdown = getCostBreakdown();
+                
+                const bookingData = {
+                    name: formData.get('name'),
+                    surname: formData.get('surname'),
+                    email: formData.get('email'),
+                    whatsapp: formData.get('whatsapp'),
+                    address: formData.get('address'),
+                    service: formData.get('service'),
+                    serviceName: serviceData ? (isArabic ? serviceData.labelAr : serviceData.label) : '',
+                    serviceDate: formData.get('serviceDate'),
+                    selectedHours: selectedHours,
+                    totalCost: breakdown.total,
+                    subtotal: breakdown.subtotal,
+                    vatAmount: breakdown.vat,
+                    bookingFee: breakdown.bookingFee,
+                    serviceRate: serviceData ? serviceData.rate : 0,
+                    language: isArabic ? 'ar' : 'en',
+                    idDocument: formData.get('idUpload') // File reference
+                };
+                
+                // Create Stripe checkout session and redirect
+                const session = await createCheckoutSession(bookingData);
+                
+                // Check if this is test mode (backwards compatibility)
+                if (session.testMode) {
+                    console.log('🧪 Test mode - processing booking immediately');
+                    
+                    // Process booking immediately in test mode
+                    const connecteamPromise = sendToConnecteam(bookingData);
+                    const emailPromise = sendEmailReceipt(bookingData);
+                    
+                    // Wait for both to complete (but don't fail if one fails)
+                    const [connecteamResult, emailResult] = await Promise.allSettled([
+                        connecteamPromise,
+                        emailPromise
+                    ]);
+                    
+                    // Log results for debugging
+                    if (connecteamResult.status === 'fulfilled') {
+                        const result = connecteamResult.value;
+                        if (result.success) {
+                            console.log('✅ Connecteam booking created successfully:', result);
+                        } else {
+                            console.log('⚠️ Connecteam booking logged for manual processing:', result.message || result.note);
+                        }
+                    } else {
+                        console.warn('⚠️ Connecteam booking failed:', connecteamResult.reason);
+                    }
+                    
+                    if (emailResult.status === 'fulfilled') {
+                        console.log('✅ Email receipt sent:', emailResult.value);
+                    } else {
+                        console.warn('⚠️ Email receipt failed:', emailResult.reason);
+                    }
+                    
+                    // Show success message
+                    handlePaymentSuccess();
+                } else {
+                    // Real Stripe mode - user was redirected to Stripe checkout
+                    // The rest of the flow will continue when they return from Stripe
+                    console.log('✅ Redirecting to Stripe checkout...');
+                }
+                
+            } catch (error) {
+                console.error('Error processing booking:', error);
+                let errorMessage = 'Payment processing failed. Please try again.';
+                
+                if (error.message.includes('Failed to create checkout session')) {
+                    errorMessage = 'Unable to connect to payment processor. Please check your connection and try again.';
+                } else if (error.message.includes('No checkout URL')) {
+                    errorMessage = 'Payment service is currently unavailable. Please try again later.';
+                }
+                
+                showErrorModal(errorMessage);
+            } finally {
+                // Reset loading state
+                document.getElementById('submitText').classList.remove('hidden');
+                document.getElementById('loadingText').classList.add('hidden');
+                document.getElementById('submitBtn').disabled = false;
+                isSubmitting = false;
+            }
+        }
+
+        // Handle payment success
+        function handlePaymentSuccess() {
+            document.getElementById('successMessage').classList.remove('hidden');
+        }
+
+        // Show error modal
+        function showErrorModal(message) {
+            document.getElementById('errorDesc').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+        }
+
+        // Attach event listeners
+        function attachEventListeners() {
+            // Language toggle
+            document.getElementById('languageToggle').addEventListener('click', toggleLanguage);
+            
+            // Service selection
+            document.getElementById('service').addEventListener('change', function() {
+                selectedService = this.value;
+                updateTotalCost();
+                clearError('serviceError');
+            });
+            
+            // Form submission
+            document.getElementById('bookingForm').addEventListener('submit', handleFormSubmit);
+            
+            // Modal controls
+            document.getElementById('showTermsBtn').addEventListener('click', () => {
+                document.getElementById('termsModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeTerms').addEventListener('click', () => {
+                document.getElementById('termsModal').classList.add('hidden');
+            });
+            
+            document.getElementById('closeSuccess').addEventListener('click', () => {
+                document.getElementById('successMessage').classList.add('hidden');
+                // Reset form
+                document.getElementById('bookingForm').reset();
+                selectedHours = [];
+                selectedService = '';
+                generateHourGrid();
+                updateTotalCost();
+            });
+            
+            document.getElementById('closeError').addEventListener('click', () => {
+                document.getElementById('errorMessage').classList.add('hidden');
+            });
+            
+            // Close modals when clicking backdrop
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.addEventListener('click', (e) => {
+                    if (e.target === backdrop) {
+                        backdrop.parentElement.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
