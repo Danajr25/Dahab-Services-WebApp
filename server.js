@@ -13,13 +13,36 @@ const CONNECTEAM_BASE_URL = 'https://api.connecteam.com'; // Correct base URL fr
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || 'pk_live_51Rzdkv8gTeFhZ0UG6Am8eRIsO6V3om7C0OQb1XgIqFelTMQy4vZ5zDB4HTSYbGB9lkrnLTkhVXx7TT6nYfyvKlAL00sDG2ff3W';
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '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';
 
-// Initialize Stripe
-const stripe = require('stripe')(STRIPE_SECRET_KEY);
+// Initialize Stripe with error handling
+let stripe;
+try {
+    stripe = require('stripe')(STRIPE_SECRET_KEY);
+    console.log('✅ Stripe initialized successfully');
+} catch (error) {
+    console.error('❌ Stripe initialization failed:', error);
+    process.exit(1);
+}
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Basic request logging
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+});
+
 app.use(express.static(path.join(__dirname)));
+
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'healthy', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
 
 // Serve your HTML file
 app.get('/', (req, res) => {
@@ -1077,11 +1100,45 @@ app.get('/api/connecteam-instances', async (req, res) => {
     }
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+// Start server - bind to all interfaces for Railway
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running at http://0.0.0.0:${PORT}`);
     console.log(`📋 Connecteam API Key: ${CONNECTEAM_API_KEY.substring(0, 8)}...`);
     console.log(`🔗 API Base URL: ${CONNECTEAM_BASE_URL}`);
-    console.log('\n📝 Test the API: http://localhost:3000/api/test-connecteam');
-    console.log('🌐 Access your website: http://localhost:3000');
+    console.log('\n📝 Railway deployment ready for production');
+    console.log('🌐 Access your booking system via Railway URL');
+});
+
+// Set server timeout to prevent Railway from killing the container
+server.timeout = 120000; // 2 minutes timeout
+server.keepAliveTimeout = 65000; // Keep alive timeout
+server.headersTimeout = 66000; // Headers timeout
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+    console.log('🔄 SIGTERM received, shutting down gracefully');
+    server.close(() => {
+        console.log('✅ Server closed successfully');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('🔄 SIGINT received, shutting down gracefully');
+    server.close(() => {
+        console.log('✅ Server closed successfully');
+        process.exit(0);
+    });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error);
+    // Don't exit immediately, let the process handle it gracefully
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Promise Rejection at:', promise, 'reason:', reason);
+    // Don't exit immediately, let the process handle it gracefully
 });
