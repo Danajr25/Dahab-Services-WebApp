@@ -3,6 +3,8 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
+
+// Use Railway's PORT environment variable (typically 8080) or fallback to 3000
 const PORT = process.env.PORT || 3000;
 
 // Your Connecteam API key
