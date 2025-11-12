@@ -1708,31 +1708,6 @@
                 }
             });
 
-            // Validate ID upload
-            const idUpload = document.getElementById('idUpload');
-            if (!idUpload.files || idUpload.files.length === 0) {
-                showError('idUploadError', 'Please upload an ID document');
-                isValid = false;
-            } else {
-                const file = idUpload.files[0];
-                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-                const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-                
-                if (!validTypes.includes(file.type)) {
-                    showError('idUploadError', 'Please upload a JPG, PNG, or PDF file');
-                    isValid = false;
-                } else if (file.size > maxSize) {
-                    showError('idUploadError', 'File size must be less than 5MB');
-                    isValid = false;
-                } else {
-                    // Show success indicator
-                    const successElement = document.getElementById('idUploadSuccess');
-                    if (successElement) {
-                        successElement.classList.remove('hidden');
-                    }
-                }
-            }
-            
             // Validate email format
             const email = document.getElementById('email').value;
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
