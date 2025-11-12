@@ -740,10 +740,12 @@
             });
         }
 
-        // Set minimum date to today
+        // Set minimum date to tomorrow (no same-day bookings)
         function setMinDate() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('serviceDate').min = today;
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+            document.getElementById('serviceDate').min = tomorrowStr;
         }
 
         // Calculate total cost with VAT
