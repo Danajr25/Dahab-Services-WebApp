@@ -60,7 +60,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
             name, surname, email, whatsapp, address, 
             service, serviceName, serviceDate, selectedHours, 
             totalCost, subtotal, vatAmount, bookingFee, serviceRate,
-            lineItems 
+            serviceTotal, lineItems 
         } = req.body;
         
         console.log('📊 Processing real Stripe payment...');
@@ -78,7 +78,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
                             name: serviceName,
                             description: `${serviceName} scheduled for ${serviceDate} at hours: ${selectedHours.join(', ')}`,
                         },
-                        unit_amount: subtotal * 100, // Stripe uses pence
+                        unit_amount: serviceTotal * 100, // Stripe uses pence - service cost only
                     },
                     quantity: 1,
                 },
