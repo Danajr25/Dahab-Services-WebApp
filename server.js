@@ -617,44 +617,9 @@ app.post('/api/connecteam-booking', async (req, res) => {
             }
         ];
         
-        // First, let's test if we can access the API at all
-        console.log('🔍 Testing API access with correct authentication...');
-        
-        try {
-            const testResponse = await fetch(`${CONNECTEAM_BASE_URL}/me`, {
-                method: 'GET',
-                headers: {
-                    'X-API-Key': CONNECTEAM_API_KEY, // CORRECT authentication method
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            console.log(`📡 API Test (/me): ${testResponse.status}`);
-            
-            if (testResponse.status === 401 || testResponse.status === 403) {
-                return res.status(401).json({
-                    success: false,
-                    message: 'Connecteam API authentication failed',
-                    error: 'Invalid API key or insufficient permissions',
-                    status: testResponse.status,
-                    suggestion: 'Check API key in Connecteam dashboard and ensure it has job creation permissions'
-                });
-            }
-            
-            if (testResponse.ok) {
-                const testData = await testResponse.json();
-                console.log('✅ API authentication successful:', Object.keys(testData));
-            }
-            
-        } catch (authError) {
-            console.log('❌ API authentication test failed:', authError.message);
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to connect to Connecteam API',
-                error: authError.message
-            });
-        }
+        // Skip authentication pre-check - proceed directly to job creation
+        // The /me endpoint may not be available or may require different permissions
+        console.log('⏭️ Skipping pre-authentication check - will validate during job creation');
         
         // Now try to create the job/task
         let success = false;
