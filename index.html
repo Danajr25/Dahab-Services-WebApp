@@ -1514,27 +1514,57 @@
                 </html>
                 `;
 
-                // EmailJS data - EXACT match with template variables
-                const emailData = {
-                    // Required by EmailJS system
-                    to_email: bookingData.email,
-                    // All template variables (matching your EmailJS template exactly)
-                    customer_name: bookingData.name,
-                    customer_surname: bookingData.surname,
-                    customer_email: bookingData.email, // Added this for the template
-                    customer_whatsapp: bookingData.whatsapp, // Added this for the template
-                    service_name: breakdown.serviceName,
-                    service_date: bookingData.serviceDate,
-                    service_address: bookingData.address,
-                    selected_hours: bookingData.selectedHours.join(', '),
-                    total_hours: breakdown.hours.toString(),
-                    service_total: breakdown.serviceTotal.toFixed(2),
-                    booking_fee: breakdown.bookingFee.toFixed(2),
-                    booking_fee_type: breakdown.hasNightHours ? '(Night Hours)' : '(Day Hours)',
-                    subtotal: breakdown.subtotal.toFixed(2),
-                    vat_amount: breakdown.vat.toFixed(2),
-                    total_amount: breakdown.total.toFixed(2)
-                };
+                // Check if this is payment-verified data (from Stripe) or form data
+                const isPaymentData = bookingData.client_name !== undefined;
+                
+                let emailData;
+                
+                if (isPaymentData) {
+                    // Data from payment verification - use directly
+                    const [firstName, ...lastNameParts] = bookingData.client_name.trim().split(' ');
+                    const lastName = lastNameParts.join(' ');
+                    
+                    emailData = {
+                        to_email: bookingData.client_email,
+                        customer_name: firstName,
+                        customer_surname: lastName,
+                        customer_email: bookingData.client_email,
+                        customer_whatsapp: bookingData.client_phone,
+                        service_name: bookingData.service_type,
+                        service_date: bookingData.service_date,
+                        service_address: bookingData.service_address,
+                        selected_hours: bookingData.service_hours.join(', '),
+                        total_hours: bookingData.total_hours.toString(),
+                        service_total: bookingData.service_cost.toFixed(2),
+                        booking_fee: bookingData.booking_fee.toFixed(2),
+                        booking_fee_type: bookingData.has_night_hours ? '(Night Hours)' : '(Day Hours)',
+                        subtotal: (bookingData.service_cost + bookingData.booking_fee).toFixed(2),
+                        vat_amount: bookingData.vat_amount.toFixed(2),
+                        total_amount: bookingData.total_amount.toFixed(2)
+                    };
+                } else {
+                    // Data from form submission
+                    const breakdown = getCostBreakdown();
+                    
+                    emailData = {
+                        to_email: bookingData.email,
+                        customer_name: bookingData.name,
+                        customer_surname: bookingData.surname,
+                        customer_email: bookingData.email,
+                        customer_whatsapp: bookingData.whatsapp,
+                        service_name: breakdown.serviceName,
+                        service_date: bookingData.serviceDate,
+                        service_address: bookingData.address,
+                        selected_hours: bookingData.selectedHours.join(', '),
+                        total_hours: breakdown.hours.toString(),
+                        service_total: breakdown.serviceTotal.toFixed(2),
+                        booking_fee: breakdown.bookingFee.toFixed(2),
+                        booking_fee_type: breakdown.hasNightHours ? '(Night Hours)' : '(Day Hours)',
+                        subtotal: breakdown.subtotal.toFixed(2),
+                        vat_amount: breakdown.vat.toFixed(2),
+                        total_amount: breakdown.total.toFixed(2)
+                    };
+                }
 
                 // Replace with your actual EmailJS credentials
                 const serviceId = 'service_a7dgx7g';
@@ -1621,27 +1651,37 @@
         // Send booking details to Connecteam
         async function sendToConnecteam(bookingData) {
             try {
-                const breakdown = getCostBreakdown();
+                // Check if this is payment-verified data (from Stripe) or form data
+                const isPaymentData = bookingData.client_name !== undefined;
                 
-                // Prepare booking details for Connecteam
-                const connecteamData = {
-                    client_name: `${bookingData.name} ${bookingData.surname}`,
-                    client_email: bookingData.email,
-                    client_phone: bookingData.whatsapp,
-                    service_address: bookingData.address,
-                    service_type: bookingData.service,
-                    service_date: bookingData.serviceDate,
-                    service_hours: bookingData.selectedHours,
-                    total_hours: bookingData.selectedHours.length,
-                    service_cost: breakdown.serviceTotal,
-                    booking_fee: breakdown.bookingFee,
-                    vat_amount: breakdown.vat,
-                    total_amount: breakdown.total,
-                    has_night_hours: breakdown.hasNightHours,
-                    booking_timestamp: new Date().toISOString(),
-                    status: 'pending_assignment',
-                    notes: `Service: ${breakdown.serviceName}, Hours: ${bookingData.selectedHours.join(', ')}`
-                };
+                let connecteamData;
+                
+                if (isPaymentData) {
+                    // Data coming from payment verification (already formatted)
+                    connecteamData = bookingData;
+                } else {
+                    // Data coming from form submission (needs formatting)
+                    const breakdown = getCostBreakdown();
+                    
+                    connecteamData = {
+                        client_name: `${bookingData.name} ${bookingData.surname}`,
+                        client_email: bookingData.email,
+                        client_phone: bookingData.whatsapp,
+                        service_address: bookingData.address,
+                        service_type: bookingData.service,
+                        service_date: bookingData.serviceDate,
+                        service_hours: bookingData.selectedHours,
+                        total_hours: bookingData.selectedHours.length,
+                        service_cost: breakdown.serviceTotal,
+                        booking_fee: breakdown.bookingFee,
+                        vat_amount: breakdown.vat,
+                        total_amount: breakdown.total,
+                        has_night_hours: breakdown.hasNightHours,
+                        booking_timestamp: new Date().toISOString(),
+                        status: 'pending_assignment',
+                        notes: `Service: ${breakdown.serviceName}, Hours: ${bookingData.selectedHours.join(', ')}`
+                    };
+                }
 
                 // Use proxy server endpoint instead of direct API call
                 const proxyUrl = '/api/connecteam-booking';
