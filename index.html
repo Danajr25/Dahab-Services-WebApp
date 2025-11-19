@@ -1538,10 +1538,18 @@
                 // Check if this is payment-verified data (from Stripe) or form data
                 const isPaymentData = bookingData.client_name !== undefined;
                 
+                console.log('🔍 Checking data type:', {
+                    isPaymentData,
+                    hasClientName: !!bookingData.client_name,
+                    hasName: !!bookingData.name,
+                    bookingDataKeys: Object.keys(bookingData)
+                });
+                
                 let emailData;
                 
                 if (isPaymentData) {
                     // Data from payment verification - use directly
+                    console.log('✅ Using payment-verified data structure');
                     const [firstName, ...lastNameParts] = bookingData.client_name.trim().split(' ');
                     const lastName = lastNameParts.join(' ');
                     
@@ -1566,7 +1574,13 @@
                     };
                 } else {
                     // Data from form submission
+                    console.log('⚠️ Using form data structure (getCostBreakdown will be called)');
                     const breakdown = getCostBreakdown();
+                    
+                    if (!breakdown) {
+                        console.error('❌ getCostBreakdown returned null! Form state is cleared.');
+                        return { success: false, error: 'Cannot generate email - form data not available' };
+                    }
                     
                     emailData = {
                         to_email: bookingData.email,
