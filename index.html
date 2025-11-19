@@ -514,10 +514,10 @@
 
     <script>
         // ⚠️ TEST MODE - Set to true for localhost testing with dummy checkout
-        const TEST_MODE = false; // Change to false for production
+        const TEST_MODE = false; // Production mode - real Stripe payments
         
-        // Stripe Configuration
-        const stripe = Stripe('pk_test_51Rzdkv8gTeFhZ0UGFuTez02NyaTPzSAgCNEzhSroqLZGueOnl4aBWn5nDUeei8mCCVS0CPZ89Ei1fEhUwbSbxRLI00Aw1ndy60');
+        // Stripe Configuration - LIVE KEY (Real payments)
+        const stripe = Stripe('pk_live_51Rzdkv8gTeFhZ0UG6Am8eRIsO6V3om7C0OQb1XgIqFelTMQy4vZ5zDB4HTSYbGB9lkrnLTkhVXx7TT6nYfyvKlAL00sDG2ff3W');
         
         // EmailJS Configuration - Updated for new SDK
         emailjs.init({
