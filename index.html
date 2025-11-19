@@ -996,6 +996,24 @@
             });
         }
 
+        // Send email receipt
+        async function sendEmailReceipt(bookingData) {
+            try {
+                // Generate receipt HTML
+                const receiptHtml = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Booking Receipt - Dahab Services</title>
+                </head>
+                <body>
+                    <h1>Receipt content would go here</h1>
+                </body>
+                </html>
+                `;
+
                 // Check if this is payment-verified data (from Stripe) or form data
                 const isPaymentData = bookingData.client_name !== undefined;
                 
