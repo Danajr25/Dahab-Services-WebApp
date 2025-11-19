@@ -531,15 +531,16 @@
         let isSubmitting = false;
 
         // Services data with Arabic translations
+        // ⚠️ TEMPORARY: All rates set to 0 for testing
         const services = [
-            { value: "personal-care", label: "Personal Care £30/hr", labelAr: "الرعاية الشخصية £30/ساعة", rate: 30 },
-            { value: "light-cleaning", label: "Light Cleaning £25/hr", labelAr: "التنظيف الخفيف £25/ساعة", rate: 25 },
-            { value: "babysitting", label: "Babysitting/Child Care £40/hr", labelAr: "رعاية الأطفال £40/ساعة", rate: 40 },
-            { value: "hospital-companion", label: "Hospital & Appointment Companion £25/hr", labelAr: "مرافق المستشفى والمواعيد £25/ساعة", rate: 25 },
-            { value: "deep-cleaning", label: "Deep Cleaning £35/hr (2 workers)", labelAr: "التنظيف العميق £35/ساعة (عاملان)", rate: 35 },
-            { value: "shopping-assistant", label: "Shopping Assistant £30/hr", labelAr: "مساعد التسوق £30/ساعة", rate: 30 },
-            { value: "shopping-behalf", label: "Shopping on Your Behalf £25/hr", labelAr: "التسوق نيابة عنك £25/ساعة", rate: 25 },
-            { value: "elderly-care", label: "Elderly Care £40/hr", labelAr: "رعاية المسنين £40/ساعة", rate: 40 }
+            { value: "personal-care", label: "Personal Care £30/hr", labelAr: "الرعاية الشخصية £30/ساعة", rate: 0 }, // was 30
+            { value: "light-cleaning", label: "Light Cleaning £25/hr", labelAr: "التنظيف الخفيف £25/ساعة", rate: 0 }, // was 25
+            { value: "babysitting", label: "Babysitting/Child Care £40/hr", labelAr: "رعاية الأطفال £40/ساعة", rate: 0 }, // was 40
+            { value: "hospital-companion", label: "Hospital & Appointment Companion £25/hr", labelAr: "مرافق المستشفى والمواعيد £25/ساعة", rate: 0 }, // was 25
+            { value: "deep-cleaning", label: "Deep Cleaning £35/hr (2 workers)", labelAr: "التنظيف العميق £35/ساعة (عاملان)", rate: 0 }, // was 35
+            { value: "shopping-assistant", label: "Shopping Assistant £30/hr", labelAr: "مساعد التسوق £30/ساعة", rate: 0 }, // was 30
+            { value: "shopping-behalf", label: "Shopping on Your Behalf £25/hr", labelAr: "التسوق نيابة عنك £25/ساعة", rate: 0 }, // was 25
+            { value: "elderly-care", label: "Elderly Care £40/hr", labelAr: "رعاية المسنين £40/ساعة", rate: 0 } // was 40
         ];
 
         // Translations
@@ -558,7 +559,7 @@
                 selectServiceOption: "Select a service",
                 dateLabel: "Service Date *",
                 hoursLabel: "Select Hours *",
-                nightSurchargeInfo: "Night hours (8PM-6AM): £70 booking fee | Day hours (7AM-7PM): £50 booking fee",
+                nightSurchargeInfo: "Night hours (8PM-6AM): £0 booking fee | Day hours (7AM-7PM): £0 booking fee", // TEMP: was £70/£50
                 totalLabel: "Total Cost:",
                 termsText: "I agree to the ",
                 submitText: "Book Service & Pay Now",
@@ -760,7 +761,7 @@
             
             const serviceTotal = serviceData.rate * selectedHours.length;
             const hasNightHours = selectedHours.some(hour => hour >= 20 || hour <= 5);
-            const bookingFee = hasNightHours ? 70 : 50;
+            const bookingFee = 0; // TEMP: was hasNightHours ? 70 : 50;
             const subtotal = serviceTotal + bookingFee;
             const vat = subtotal * 0.20; // 20% VAT
             
@@ -776,7 +777,7 @@
             
             const serviceTotal = serviceData.rate * selectedHours.length;
             const hasNightHours = selectedHours.some(hour => hour >= 20 || hour <= 5);
-            const bookingFee = hasNightHours ? 70 : 50;
+            const bookingFee = 0; // TEMP: was hasNightHours ? 70 : 50;
             const subtotal = serviceTotal + bookingFee;
             const vat = subtotal * 0.20; // 20% VAT
             const total = subtotal + vat;
